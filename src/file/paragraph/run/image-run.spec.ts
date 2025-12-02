@@ -1178,4 +1178,178 @@ describe("ImageRun", () => {
             );
         });
     });
+
+    describe("#fromSvg()", () => {
+        it("should create an SVG ImageRun with PNG fallback", () => {
+            const svgData = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40"/></svg>');
+            const pngFallback = Buffer.from("PNG_DATA");
+
+            const imageRun = ImageRun.fromSvg(svgData, { type: "png", data: pngFallback }, { width: 100, height: 100 });
+
+            const addImageSpy = vi.fn();
+            const tree = new Formatter().format(imageRun, {
+                file: {
+                    Media: {
+                        addImage: addImageSpy,
+                    },
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            });
+
+            // Should register both SVG and fallback images
+            expect(addImageSpy).toHaveBeenCalledTimes(2);
+
+            // Verify the tree structure contains SVG blip extension
+            expect(tree).toStrictEqual({
+                "w:r": [
+                    {
+                        "w:drawing": [
+                            {
+                                "wp:inline": expect.arrayContaining([
+                                    {
+                                        "a:graphic": expect.arrayContaining([
+                                            {
+                                                "a:graphicData": expect.arrayContaining([
+                                                    {
+                                                        "pic:pic": expect.arrayContaining([
+                                                            {
+                                                                "pic:blipFill": expect.arrayContaining([
+                                                                    {
+                                                                        "a:blip": expect.arrayContaining([
+                                                                            {
+                                                                                "a:extLst": expect.arrayContaining([
+                                                                                    {
+                                                                                        "a:ext": expect.arrayContaining([
+                                                                                            {
+                                                                                                "asvg:svgBlip": expect.objectContaining({
+                                                                                                    _attr: expect.objectContaining({
+                                                                                                        "xmlns:asvg":
+                                                                                                            "http://schemas.microsoft.com/office/drawing/2016/SVG/main",
+                                                                                                    }),
+                                                                                                }),
+                                                                                            },
+                                                                                        ]),
+                                                                                    },
+                                                                                ]),
+                                                                            },
+                                                                        ]),
+                                                                    },
+                                                                ]),
+                                                            },
+                                                        ]),
+                                                    },
+                                                ]),
+                                            },
+                                        ]),
+                                    },
+                                ]),
+                            },
+                        ],
+                    },
+                ],
+            });
+        });
+
+        it("should create an SVG ImageRun with JPEG fallback", () => {
+            const svgData = Buffer.from("<svg></svg>");
+            const jpegFallback = Buffer.from("JPEG_DATA");
+
+            const imageRun = ImageRun.fromSvg(svgData, { type: "jpg", data: jpegFallback }, { width: 200, height: 150 });
+
+            const addImageSpy = vi.fn();
+            new Formatter().format(imageRun, {
+                file: {
+                    Media: {
+                        addImage: addImageSpy,
+                    },
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            });
+
+            // Should register both SVG and fallback images
+            expect(addImageSpy).toHaveBeenCalledTimes(2);
+
+            // First call should be for SVG
+            expect(addImageSpy).toHaveBeenNthCalledWith(1, expect.stringMatching(/\.svg$/), expect.objectContaining({ type: "svg" }));
+
+            // Second call should be for JPEG fallback
+            expect(addImageSpy).toHaveBeenNthCalledWith(2, expect.stringMatching(/\.jpg$/), expect.objectContaining({ type: "jpg" }));
+        });
+
+        it("should pass through transformation options", () => {
+            const svgData = Buffer.from("<svg></svg>");
+            const pngFallback = Buffer.from("PNG_DATA");
+
+            const imageRun = ImageRun.fromSvg(
+                svgData,
+                { type: "png", data: pngFallback },
+                {
+                    width: 300,
+                    height: 200,
+                    rotation: 90,
+                    flip: { horizontal: true, vertical: false },
+                },
+            );
+
+            const addImageSpy = vi.fn();
+            new Formatter().format(imageRun, {
+                file: {
+                    Media: {
+                        addImage: addImageSpy,
+                    },
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            });
+
+            // Verify transformation is applied to the SVG media data
+            const svgMediaData = addImageSpy.mock.calls[0][1];
+            expect(svgMediaData.transformation.pixels).toEqual({ x: 300, y: 200 });
+            expect(svgMediaData.transformation.rotation).toBe(90 * 60000);
+            expect(svgMediaData.transformation.flip).toEqual({ horizontal: true, vertical: false });
+        });
+
+        it("should accept string SVG data", () => {
+            const svgString = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="red"/></svg>';
+            const pngFallback = Buffer.from("PNG_DATA");
+
+            const imageRun = ImageRun.fromSvg(svgString, { type: "png", data: pngFallback }, { width: 100, height: 100 });
+
+            const addImageSpy = vi.fn();
+            new Formatter().format(imageRun, {
+                file: {
+                    Media: {
+                        addImage: addImageSpy,
+                    },
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            });
+
+            expect(addImageSpy).toHaveBeenCalledTimes(2);
+            expect(addImageSpy).toHaveBeenNthCalledWith(1, expect.stringMatching(/\.svg$/), expect.objectContaining({ type: "svg" }));
+        });
+
+        it("should accept Uint8Array SVG data", () => {
+            const svgUint8 = new Uint8Array([60, 115, 118, 103, 62, 60, 47, 115, 118, 103, 62]); // "<svg></svg>"
+            const pngFallback = new Uint8Array([80, 78, 71]); // "PNG"
+
+            const imageRun = ImageRun.fromSvg(svgUint8, { type: "png", data: pngFallback }, { width: 50, height: 50 });
+
+            const addImageSpy = vi.fn();
+            new Formatter().format(imageRun, {
+                file: {
+                    Media: {
+                        addImage: addImageSpy,
+                    },
+                } as unknown as File,
+                viewWrapper: {} as unknown as IViewWrapper,
+                stack: [],
+            });
+
+            expect(addImageSpy).toHaveBeenCalledTimes(2);
+        });
+    });
 });

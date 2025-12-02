@@ -20,13 +20,41 @@ type RegularImageOptions = {
     readonly data: Buffer | string | Uint8Array | ArrayBuffer;
 };
 
+/**
+ * Options for SVG images. SVG images require a raster fallback for
+ * compatibility with Word processors that do not support SVG rendering.
+ */
 type SvgMediaOptions = {
     readonly type: "svg";
     readonly data: Buffer | string | Uint8Array | ArrayBuffer;
     /**
-     * Required in case the Word processor does not support SVG.
+     * Required raster fallback image for Word processors that do not support SVG.
+     * This image will be displayed in older versions of Word or alternative viewers.
      */
     readonly fallback: RegularImageOptions;
+};
+
+/**
+ * Options for the `ImageRun.fromSvg()` helper method.
+ */
+export type FromSvgOptions = {
+    /** Width of the image in pixels. */
+    readonly width: number;
+    /** Height of the image in pixels. */
+    readonly height: number;
+    /** Optional flip transformation. */
+    readonly flip?: {
+        readonly vertical?: boolean;
+        readonly horizontal?: boolean;
+    };
+    /** Optional rotation in degrees. */
+    readonly rotation?: number;
+    /** Optional floating positioning options. */
+    readonly floating?: IFloating;
+    /** Optional alt text and document properties. */
+    readonly altText?: DocPropertiesOptions;
+    /** Optional outline/border options. */
+    readonly outline?: OutlineOptions;
 };
 
 export type IImageOptions = (RegularImageOptions | SvgMediaOptions) & CoreImageOptions;
@@ -76,6 +104,54 @@ const createImageData = (options: IImageOptions, key: string): Pick<IMediaData, 
 
 export class ImageRun extends Run {
     private readonly imageData: IMediaData;
+
+    /**
+     * Creates an ImageRun from SVG data with a required raster fallback.
+     *
+     * This is a convenience method for creating SVG images. SVG support requires
+     * Word 2019 or later / Microsoft 365. The fallback image will be displayed
+     * in older Word versions or alternative viewers (e.g., LibreOffice).
+     *
+     * @param svg - The SVG image data as a string, Uint8Array, ArrayBuffer, or data URI.
+     * @param fallback - The raster fallback image with its type and data.
+     * @param options - Transformation and positioning options for the image.
+     * @returns A new ImageRun instance configured for SVG with fallback.
+     *
+     * @example
+     * ```ts
+     * const svgContent = '<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="40" fill="blue"/></svg>';
+     * const pngFallback = fs.readFileSync("fallback.png");
+     *
+     * const image = ImageRun.fromSvg(
+     *   svgContent,
+     *   { type: "png", data: pngFallback },
+     *   { width: 100, height: 100 }
+     * );
+     * ```
+     */
+    public static fromSvg(
+        svg: string | Uint8Array | ArrayBuffer,
+        fallback: { readonly data: string | Uint8Array | ArrayBuffer; readonly type: "png" | "jpg" | "gif" | "bmp" },
+        options: FromSvgOptions,
+    ): ImageRun {
+        return new ImageRun({
+            type: "svg",
+            data: svg,
+            fallback: {
+                type: fallback.type,
+                data: fallback.data,
+            },
+            transformation: {
+                width: options.width,
+                height: options.height,
+                flip: options.flip,
+                rotation: options.rotation,
+            },
+            floating: options.floating,
+            altText: options.altText,
+            outline: options.outline,
+        });
+    }
 
     public constructor(options: IImageOptions) {
         super({});

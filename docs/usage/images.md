@@ -75,7 +75,136 @@ const doc = new Document({
 });
 ```
 
-`docx` supports `jpeg`, `jpg`, `bmp`, `gif` and `png`
+`docx` supports `jpeg`, `jpg`, `bmp`, `gif`, `png`, and `svg`
+
+## SVG Images
+
+SVG (Scalable Vector Graphics) images are supported with a required raster fallback. SVG rendering requires **Word 2019 or later** / **Microsoft 365**. The fallback image is displayed in older Word versions or alternative viewers like LibreOffice.
+
+### Basic SVG Usage
+
+```ts
+const image = new ImageRun({
+    type: "svg",
+    data: fs.readFileSync("./diagram.svg"),
+    transformation: {
+        width: 200,
+        height: 150,
+    },
+    fallback: {
+        type: "png",
+        data: fs.readFileSync("./diagram.png"),
+    },
+});
+```
+
+### Using the fromSvg() Helper
+
+For convenience, you can use the static `fromSvg()` method:
+
+```ts
+const image = ImageRun.fromSvg(
+    Buffer.from(svgContent, "utf-8"),        // SVG as Buffer or Uint8Array
+    { type: "png", data: pngFallbackData },  // Required fallback
+    { width: 200, height: 150 }              // Dimensions and optional transformations
+);
+```
+
+?> **Note**: The `fromSvg()` helper expects binary data (`Buffer` or `Uint8Array`), not raw strings. Use `Buffer.from(svgString, "utf-8")` to convert SVG strings.
+
+### Inline SVG Content
+
+You can embed SVG content directly as a string:
+
+```ts
+const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+  <circle cx="50" cy="50" r="40" fill="blue"/>
+</svg>`;
+
+const image = new ImageRun({
+    type: "svg",
+    data: Buffer.from(svgContent),
+    transformation: {
+        width: 100,
+        height: 100,
+    },
+    fallback: {
+        type: "png",
+        data: pngFallbackBuffer,
+    },
+});
+```
+
+### SVG with Transformations
+
+SVG images support the same transformations as raster images:
+
+```ts
+const image = new ImageRun({
+    type: "svg",
+    data: svgBuffer,
+    transformation: {
+        width: 150,
+        height: 150,
+        rotation: 45,
+        flip: {
+            horizontal: true,
+        },
+    },
+    fallback: {
+        type: "png",
+        data: pngFallback,
+    },
+});
+```
+
+### Floating SVG Images
+
+SVG images can be positioned as floating elements:
+
+```ts
+const image = ImageRun.fromSvg(
+    svgContent,
+    { type: "png", data: fallbackPng },
+    {
+        width: 100,
+        height: 100,
+        floating: {
+            horizontalPosition: {
+                relative: HorizontalPositionRelativeFrom.PAGE,
+                align: HorizontalPositionAlign.CENTER,
+            },
+            verticalPosition: {
+                relative: VerticalPositionRelativeFrom.PAGE,
+                align: VerticalPositionAlign.TOP,
+            },
+        },
+    }
+);
+```
+
+### SVG Options
+
+| Property       | Type                  | Notes                                                    |
+| -------------- | --------------------- | -------------------------------------------------------- |
+| type           | `"svg"`               | Required, must be `"svg"`                                |
+| data           | `Buffer/Uint8Array/string` | The SVG content                                     |
+| transformation | `object`              | Width, height, rotation, flip                            |
+| fallback       | `object`              | **Required** - raster image for compatibility            |
+| floating       | `object`              | Optional positioning options                             |
+| altText        | `object`              | Optional accessibility text                              |
+| outline        | `object`              | Optional border/outline                                  |
+
+### Fallback Options
+
+| Property | Type                           | Notes                          |
+| -------- | ------------------------------ | ------------------------------ |
+| type     | `"png"`, `"jpg"`, `"gif"`, `"bmp"` | Required raster format      |
+| data     | `Buffer/Uint8Array/string`     | The fallback image data        |
+
+?> **Tip**: For best results, generate a PNG fallback at the same dimensions as your SVG. Tools like Inkscape, ImageMagick, or browser-based libraries can convert SVG to PNG.
+
+!> **Important**: The fallback image is required. Documents will not render correctly without it in older Word versions
 
 ## Positioning
 
@@ -308,3 +437,11 @@ Example showing how to float images on top of text and optimally give a `margin`
 [Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/38-text-wrapping.ts ":include")
 
 _Source: https://github.com/dolanmiu/docx/blob/master/demo/38-text-wrapping.ts_
+
+### SVG images
+
+Example showing how to add SVG images with fallbacks, including inline SVG content, file-based SVG, floating SVG, and transformations.
+
+[Example](https://raw.githubusercontent.com/dolanmiu/docx/master/demo/97-svg-images.ts ":include")
+
+_Source: https://github.com/dolanmiu/docx/blob/master/demo/97-svg-images.ts_
