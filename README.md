@@ -3,6 +3,10 @@
 </p>
 
 <p align="center">
+    Fork of <a href="https://github.com/dolanmiu/docx">dolanmiu/docx</a> with native SVG image support.
+</p>
+
+<p align="center">
     Easily generate and modify .docx files with JS/TS. Works for Node and on the Browser.
 </p>
 
@@ -11,14 +15,46 @@
 [![NPM version][npm-image]][npm-url]
 [![Downloads per month][downloads-image]][downloads-url]
 [![GitHub Action Workflow Status][github-actions-workflow-image]][github-actions-workflow-url]
-[![Known Vulnerabilities][snky-image]][snky-url]
 [![PRs Welcome][pr-image]][pr-url]
-[![codecov][codecov-image]][codecov-url]
-[![Docx.js Editor][docxjs-editor-image]][docxjs-editor-url]
 
 <p align="center">
     <img src="https://i.imgur.com/QeL1HuU.png" alt="drawing"/>
 </p>
+
+# SVG Image Support
+
+This fork adds native SVG image support to the docx library.
+
+## Installation
+
+```bash
+npm install @jamesainslie/docx
+```
+
+## Usage
+
+```typescript
+import { ImageRun } from '@jamesainslie/docx';
+
+// Embed SVG image using the mimeType option
+const svgImage = new ImageRun({
+  data: svgBytes,                    // Uint8Array of SVG XML
+  mimeType: 'image/svg+xml',         // Signals SVG format
+  transformation: {
+    width: 600,
+    height: 400,
+  },
+});
+```
+
+## Requirements
+
+- Microsoft Word 2016 or later
+- Microsoft 365
+
+Older Word versions may not render SVG images correctly.
+
+---
 
 # Demo
 
@@ -59,7 +95,7 @@ Press `endpoint` on the `RunKit` website:
 -   https://runkit.com/dolanmiu/docx-demo8 - Header and Footer
 -   https://runkit.com/dolanmiu/docx-demo10 - **My CV generated with docx**
 
-More [here](https://github.com/dolanmiu/docx/tree/master/demo)
+More [here](https://github.com/jamesainslie/docx/tree/feature/svg-image-support/demo)
 
 # How to use & Documentation
 
@@ -71,7 +107,7 @@ Experience `docx` in action through [Docx.js Editor][docxjs-editor-url], an inte
 
 # Examples
 
-Check the [demo folder](https://github.com/dolanmiu/docx/tree/master/demo) for examples.
+Check the [demo folder](https://github.com/jamesainslie/docx/tree/feature/svg-image-support/demo) for examples.
 
 # Contributing
 
@@ -99,26 +135,13 @@ Read the contribution guidelines [here](https://docx.js.org/#/contribution-guide
 
 ---
 
-[![patreon][patreon-image]][patreon-url]
-[![browserstack][browserstack-image]][browserstack-url]
+This fork is based on the excellent work by [Dolan Miu](https://github.com/dolanmiu) and contributors on [dolanmiu/docx](https://github.com/dolanmiu/docx).
 
-Made with 💖
-
-[npm-image]: https://badge.fury.io/js/docx.svg
-[npm-url]: https://npmjs.org/package/docx
-[downloads-image]: https://img.shields.io/npm/dm/docx.svg
-[downloads-url]: https://npmjs.org/package/docx
-[github-actions-workflow-image]: https://github.com/dolanmiu/docx/workflows/Default/badge.svg
-[github-actions-workflow-url]: https://github.com/dolanmiu/docx/actions
-[snky-image]: https://snyk.io/test/github/dolanmiu/docx/badge.svg
-[snky-url]: https://snyk.io/test/github/dolanmiu/docx
+[npm-image]: https://badge.fury.io/js/@jamesainslie%2Fdocx.svg
+[npm-url]: https://npmjs.org/package/@jamesainslie/docx
+[downloads-image]: https://img.shields.io/npm/dm/@jamesainslie/docx.svg
+[downloads-url]: https://npmjs.org/package/@jamesainslie/docx
+[github-actions-workflow-image]: https://github.com/jamesainslie/docx/workflows/Publish%20to%20npm/badge.svg
+[github-actions-workflow-url]: https://github.com/jamesainslie/docx/actions
 [pr-image]: https://img.shields.io/badge/PRs-welcome-brightgreen.svg
 [pr-url]: http://makeapullrequest.com
-[codecov-image]: https://codecov.io/gh/dolanmiu/docx/branch/master/graph/badge.svg
-[codecov-url]: https://codecov.io/gh/dolanmiu/docx
-[patreon-image]: https://user-images.githubusercontent.com/2917613/51251459-4e880480-1991-11e9-92bf-38b96675a9e2.png
-[patreon-url]: https://www.patreon.com/dolanmiu
-[browserstack-image]: https://user-images.githubusercontent.com/2917613/54233552-128e9d00-4505-11e9-88fb-025a4e04007c.png
-[browserstack-url]: https://www.browserstack.com
-[docxjs-editor-image]: https://img.shields.io/badge/Docx.js%20Editor-2b579a.svg?style=flat&amp;logo=javascript&amp;logoColor=white
-[docxjs-editor-url]: https://docxjs-editor.vercel.app/
